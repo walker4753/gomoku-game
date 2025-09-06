@@ -58,12 +58,15 @@ class GomokuGame {
     
     // 设置事件监听器
     setupEventListeners() {
+        this.setupBoardEventListener();
+        this.setupResetButtonListener();
+        this.setupModalEventListeners();
+    }
+    
+    // 设置棋盘点击事件监听器
+    setupBoardEventListener() {
         const boardElement = document.getElementById('game-board');
-        const resetButton = document.getElementById('reset-btn');
-        const playAgainButton = document.getElementById('play-again-btn');
-        const closeModalButton = document.getElementById('close-modal-btn');
         
-        // 棋盘点击事件
         boardElement.addEventListener('click', (event) => {
             if (this.gameOver) return;
             
@@ -74,11 +77,21 @@ class GomokuGame {
                 this.makeMove(row, col);
             }
         });
+    }
+    
+    // 设置重新开始按钮事件监听器
+    setupResetButtonListener() {
+        const resetButton = document.getElementById('reset-btn');
         
-        // 重新开始按钮事件
         resetButton.addEventListener('click', () => {
             this.resetGame();
         });
+    }
+    
+    // 设置模态框事件监听器
+    setupModalEventListeners() {
+        const playAgainButton = document.getElementById('play-again-btn');
+        const closeModalButton = document.getElementById('close-modal-btn');
         
         // 再来一局按钮事件
         playAgainButton.addEventListener('click', () => {
@@ -124,50 +137,53 @@ class GomokuGame {
     
     // 检查是否获胜
     checkWin(row, col) {
-        const player = this.board[row][col];
+        const player = this.board[row][col]; // 当前落子的玩家
         const directions = [
-            [0, 1],  // 水平
-            [1, 0],  // 垂直
-            [1, 1],  // 对角线 ↘
-            [1, -1]  // 对角线 ↙
+            [0, 1],  // 水平方向 →
+            [1, 0],  // 垂直方向 ↓
+            [1, 1],  // 对角线方向 ↘
+            [1, -1]  // 对角线方向 ↙
         ];
         
+        // 检查所有四个方向
         for (const [dx, dy] of directions) {
             let count = 1; // 当前位置已经有一个棋子
             
-            // 正向检查
+            // 正向检查：从当前位置向一个方向检查最多4个位置
             for (let i = 1; i <= 4; i++) {
                 const newRow = row + dx * i;
                 const newCol = col + dy * i;
                 
+                // 如果位置有效且棋子相同，增加计数
                 if (this.isValidPosition(newRow, newCol) && 
                     this.board[newRow][newCol] === player) {
                     count++;
                 } else {
-                    break;
+                    break; // 遇到不同棋子或边界，停止检查
                 }
             }
             
-            // 反向检查
+            // 反向检查：从当前位置向相反方向检查最多4个位置
             for (let i = 1; i <= 4; i++) {
                 const newRow = row - dx * i;
                 const newCol = col - dy * i;
                 
+                // 如果位置有效且棋子相同，增加计数
                 if (this.isValidPosition(newRow, newCol) && 
                     this.board[newRow][newCol] === player) {
                     count++;
                 } else {
-                    break;
+                    break; // 遇到不同棋子或边界，停止检查
                 }
             }
             
-            // 如果连续5个相同棋子，获胜
-            if (count >= 5) {
+            // 精确匹配5个连续棋子才判定获胜（修复了原来>=5的错误）
+            if (count === 5) {
                 return true;
             }
         }
         
-        return false;
+        return false; // 所有方向都没有5连珠
     }
     
     // 检查位置是否有效
@@ -202,6 +218,9 @@ class GomokuGame {
         
         modalMessage.textContent = `${this.winner === BLACK ? '黑子' : '白子'}获得了胜利！`;
         modal.style.display = 'flex';
+        
+        // 完全禁用棋盘交互
+        this.disableBoard();
     }
     
     // 隐藏获胜弹窗
@@ -210,12 +229,27 @@ class GomokuGame {
         modal.style.display = 'none';
     }
     
+    // 禁用棋盘交互
+    disableBoard() {
+        const boardElement = document.getElementById('game-board');
+        boardElement.style.pointerEvents = 'none'; // 禁用鼠标事件
+        boardElement.style.opacity = '0.7'; // 降低透明度表示禁用状态
+    }
+    
+    // 启用棋盘交互
+    enableBoard() {
+        const boardElement = document.getElementById('game-board');
+        boardElement.style.pointerEvents = 'auto'; // 启用鼠标事件
+        boardElement.style.opacity = '1'; // 恢复完全可见
+    }
+    
     // 重置游戏
     resetGame() {
         this.currentPlayer = BLACK;
         this.gameOver = false;
         this.winner = null;
         this.hideWinnerModal();
+        this.enableBoard(); // 重新启用棋盘交互
         this.initializeGame();
     }
 }
